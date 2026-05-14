@@ -1,0 +1,7 @@
+streamlit
+pillow
+pypinyin
+jieba
+pandas
+openai
+requests
