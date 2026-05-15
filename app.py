@@ -982,10 +982,6 @@ def _generate_wl_sentence(available: dict[str, str]) -> list[str]:
 
 with tab_words:
     st.subheader("Word Lookup")
-    st.write(
-        "Search for English words or phrases — type to filter, then select. "
-        "Each entry shows the Chinese mnemonic art for that word or phrase."
-    )
 
     eng_lookup = load_english_lookup()
 
@@ -996,55 +992,219 @@ with tab_words:
         if (ENGLISH_IMAGE_DIR / f"{k}.jpg").exists()
     }
 
-    col_sentence, col_generate = st.columns([4, 1])
-    with col_sentence:
-        st.selectbox(
-            "Or load a sample sentence:",
-            options=[_SENTENCE_NONE] + [s["label"] for s in CURATED_SENTENCES],
-            key="wl_sentence_picker",
-            on_change=_load_wl_sentence,
-        )
-    with col_generate:
-        st.write("")   # nudge button down to align with selectbox
-        if st.button("🎲 Generate", use_container_width=True):
-            words = _generate_wl_sentence(available)
-            if words:
-                st.session_state.wl_selected = words
-
-    selected_displays = st.multiselect(
-        "Words / phrases",
-        options=sorted(available.keys(), key=str.lower),
-        placeholder="Type to search — e.g.  sleep,  phone,  play ball…",
-        key="wl_selected",
+    # ── Mode toggle ───────────────────────────────────────────────────────────
+    wl_mode = st.radio(
+        "Mode",
+        ["🔍 Word Search", "📖 Passage Reader"],
+        horizontal=True,
+        label_visibility="collapsed",
     )
 
-    if selected_displays:
-        cols_per_row = COLS_FOR_SIZE[img_size]
-        slugs = [available[d] for d in selected_displays]
+    # ═════════════════════════════════════════════════════════════════════════
+    # MODE A — WORD SEARCH (original multiselect behaviour)
+    # ═════════════════════════════════════════════════════════════════════════
+    if wl_mode == "🔍 Word Search":
+        st.write(
+            "Search for English words or phrases — type to filter, then select. "
+            "Each entry shows the Chinese mnemonic art for that word or phrase."
+        )
 
-        for row_start in range(0, len(slugs), cols_per_row):
-            row_slugs = slugs[row_start : row_start + cols_per_row]
-            padded    = row_slugs + [None] * (cols_per_row - len(row_slugs))
-            cols      = st.columns(cols_per_row)
+        col_sentence, col_generate = st.columns([4, 1])
+        with col_sentence:
+            st.selectbox(
+                "Or load a sample sentence:",
+                options=[_SENTENCE_NONE] + [s["label"] for s in CURATED_SENTENCES],
+                key="wl_sentence_picker",
+                on_change=_load_wl_sentence,
+            )
+        with col_generate:
+            st.write("")   # nudge button down to align with selectbox
+            if st.button("🎲 Generate", use_container_width=True):
+                words = _generate_wl_sentence(available)
+                if words:
+                    st.session_state.wl_selected = words
 
-            for col, slug in zip(cols, padded):
-                if slug is None:
-                    continue
-                entry = eng_lookup[slug]
-                img_p = ENGLISH_IMAGE_DIR / f"{slug}.jpg"
+        selected_displays = st.multiselect(
+            "Words / phrases",
+            options=sorted(available.keys(), key=str.lower),
+            placeholder="Type to search — e.g.  sleep,  phone,  play ball…",
+            key="wl_selected",
+        )
 
-                with col:
-                    st.image(Image.open(img_p), use_container_width=True)
-                    st.markdown(
-                        f"<div style='text-align:center;font-size:2em;"
-                        f"font-weight:bold;margin-top:4px'>"
-                        f"{entry['chinese']}</div>",
-                        unsafe_allow_html=True,
-                    )
-                    st.markdown(
-                        f"<div style='text-align:center;color:#666;"
-                        f"margin-bottom:8px'>{entry['pinyin']}</div>",
-                        unsafe_allow_html=True,
-                    )
+        if selected_displays:
+            cols_per_row = COLS_FOR_SIZE[img_size]
+            slugs = [available[d] for d in selected_displays]
 
+            for row_start in range(0, len(slugs), cols_per_row):
+                row_slugs = slugs[row_start : row_start + cols_per_row]
+                padded    = row_slugs + [None] * (cols_per_row - len(row_slugs))
+                cols      = st.columns(cols_per_row)
+
+                for col, slug in zip(cols, padded):
+                    if slug is None:
+                        continue
+                    entry = eng_lookup[slug]
+                    img_p = ENGLISH_IMAGE_DIR / f"{slug}.jpg"
+
+                    with col:
+                        st.image(Image.open(img_p), use_container_width=True)
+                        st.markdown(
+                            f"<div style='text-align:center;font-size:2em;"
+                            f"font-weight:bold;margin-top:4px'>"
+                            f"{entry['chinese']}</div>",
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(
+                            f"<div style='text-align:center;color:#666;"
+                            f"margin-bottom:8px'>{entry['pinyin']}</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                st.write("")
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # MODE B — PASSAGE READER
+    # ═════════════════════════════════════════════════════════════════════════
+    else:
+        st.write(
+            "Type an English sentence or paragraph below. "
+            "Each word will be shown as its mnemonic image — "
+            "grey tiles are words not yet in the image library."
+        )
+
+        passage_text = st.text_area(
+            "English passage",
+            height=130,
+            placeholder=(
+                "e.g.  Today I want to drink water and eat breakfast at home. "
+                "Tomorrow I will go to school and study."
+            ),
+        )
+
+        col_read, col_clear = st.columns([3, 1])
+        read_clicked  = col_read.button("📖  Render passage", use_container_width=True)
+        clear_clicked = col_clear.button("✕  Clear", use_container_width=True)
+
+        if clear_clicked:
+            st.session_state.pop("wl_passage_rendered", None)
+
+        if read_clicked and passage_text.strip():
+            st.session_state["wl_passage_rendered"] = passage_text.strip()
+
+        rendered_text = st.session_state.get("wl_passage_rendered", "")
+
+        if rendered_text:
+            # ── Tokenise: split into words, keep newlines as row breaks ───────
+            # Build a token stream: {"type": "word", "text": str}
+            #                    or {"type": "newline"}
+            # We try 2-word combinations first (for phrases like "play ball").
+            token_stream: list[dict] = []
+            for line in rendered_text.splitlines():
+                if token_stream:
+                    token_stream.append({"type": "newline"})
+                raw_words = re.findall(r"[a-zA-Z''-]+", line)
+                i = 0
+                while i < len(raw_words):
+                    # Try a 2-word phrase first (e.g. "play ball", "at home")
+                    matched = False
+                    if i + 1 < len(raw_words):
+                        phrase = f"{raw_words[i]} {raw_words[i + 1]}"
+                        slug2  = to_slug(phrase)
+                        if (ENGLISH_IMAGE_DIR / f"{slug2}.jpg").exists():
+                            token_stream.append({"type": "word", "text": phrase,
+                                                 "slug": slug2, "found": True})
+                            i += 2
+                            matched = True
+                    if not matched:
+                        word = raw_words[i]
+                        slug = to_slug(word)
+                        found = (ENGLISH_IMAGE_DIR / f"{slug}.jpg").exists()
+                        token_stream.append({"type": "word", "text": word,
+                                             "slug": slug, "found": found})
+                        i += 1
+
+            # ── Layout into rows (wrap at cols_per_row words) ─────────────────
+            cols_per_row = COLS_FOR_SIZE[img_size]
+            rows: list[list[dict]] = []
+            current_row: list[dict] = []
+
+            for tok in token_stream:
+                if tok["type"] == "newline":
+                    if current_row:
+                        rows.append(current_row)
+                        current_row = []
+                else:
+                    if len(current_row) >= cols_per_row:
+                        rows.append(current_row)
+                        current_row = []
+                    current_row.append(tok)
+            if current_row:
+                rows.append(current_row)
+
+            # ── Render rows ───────────────────────────────────────────────────
+            found_count = sum(1 for t in token_stream
+                              if t["type"] == "word" and t["found"])
+            total_count = sum(1 for t in token_stream if t["type"] == "word")
+            st.caption(
+                f"{found_count} / {total_count} words have mnemonic images  "
+                f"({'grey' if found_count < total_count else 'all covered ✅'}  "
+                f"{'tiles = not yet generated' if found_count < total_count else ''})"
+            )
             st.write("")
+
+            for row in rows:
+                padded = row + [None] * (cols_per_row - len(row))
+                cols   = st.columns(cols_per_row)
+
+                for col, tok in zip(cols, padded):
+                    if tok is None:
+                        continue
+                    with col:
+                        if tok["found"]:
+                            img_p = ENGLISH_IMAGE_DIR / f"{tok['slug']}.jpg"
+                            st.image(Image.open(img_p), use_container_width=True)
+                            # Chinese + pinyin below
+                            entry = eng_lookup.get(tok["slug"], {})
+                            if entry.get("chinese"):
+                                st.markdown(
+                                    f"<div style='text-align:center;"
+                                    f"font-size:1.5em;font-weight:bold;"
+                                    f"line-height:1.2;margin-top:2px'>"
+                                    f"{entry['chinese']}</div>",
+                                    unsafe_allow_html=True,
+                                )
+                            if entry.get("pinyin"):
+                                st.markdown(
+                                    f"<div style='text-align:center;"
+                                    f"color:#888;font-size:0.82em;"
+                                    f"margin-bottom:6px'>{entry['pinyin']}</div>",
+                                    unsafe_allow_html=True,
+                                )
+                        else:
+                            # Grey placeholder — word not in library yet
+                            st.markdown(
+                                f"<div style='"
+                                f"background:#ebebeb;"
+                                f"border:2px dashed #ccc;"
+                                f"border-radius:8px;"
+                                f"padding:18px 6px;"
+                                f"text-align:center;"
+                                f"color:#999;"
+                                f"font-size:0.9em;"
+                                f"font-weight:600;"
+                                f"min-height:70px;"
+                                f"display:flex;"
+                                f"align-items:center;"
+                                f"justify-content:center;'>"
+                                f"{tok['text']}</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                        # Word label under every cell
+                        st.markdown(
+                            f"<div style='text-align:center;font-size:0.75em;"
+                            f"color:#bbb;margin-top:2px'>{tok['text']}</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                st.write("")

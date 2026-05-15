@@ -42,7 +42,7 @@ from PIL import Image
 
 SCRIPT_DIR    = Path(__file__).parent
 MNEMONIC_CSV  = SCRIPT_DIR / "Chinese Mnemonic Source - Sheet1.csv"
-HSK1_CSV      = SCRIPT_DIR / "hsk1.csv"
+HSK_CSVS      = [SCRIPT_DIR / "hsk1.csv", SCRIPT_DIR / "hsk2.csv"]
 OUTPUT_DIR    = Path("english_images")
 PROGRESS_FILE = Path("english_progress.json")
 
@@ -179,7 +179,7 @@ def save_jpeg(b64_data: str, path: Path) -> None:
 
 def main() -> None:
     # Sanity checks
-    for p in (MNEMONIC_CSV, HSK1_CSV):
+    for p in [MNEMONIC_CSV] + HSK_CSVS:
         if not p.exists():
             sys.exit(f"File not found: {p}")
 
@@ -194,60 +194,61 @@ def main() -> None:
 
     OUTPUT_DIR.mkdir(exist_ok=True)
 
-    # ── Build entry list from HSK 1 ───────────────────────────────────────────
+    # ── Build entry list from all HSK CSVs ───────────────────────────────────
     entries: list[dict] = []
     seen_slugs: set[str] = set()
 
-    with open(HSK1_CSV, newline="", encoding="utf-8") as f:
-        reader   = csv.DictReader(f)
-        fieldmap = {c.strip().lower(): c for c in (reader.fieldnames or [])}
+    for csv_path in HSK_CSVS:
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            reader   = csv.DictReader(f)
+            fieldmap = {c.strip().lower(): c for c in (reader.fieldnames or [])}
 
-        hanzi_col   = fieldmap.get("hanzi") or fieldmap.get("chinese", "")
-        english_col = fieldmap.get("english", "")
+            hanzi_col   = fieldmap.get("hanzi") or fieldmap.get("chinese", "")
+            english_col = fieldmap.get("english", "")
 
-        for row in reader:
-            chinese = (row.get(hanzi_col) or "").strip()
-            english = (row.get(english_col) or "").strip()
-            if not chinese or not english:
-                continue
+            for row in reader:
+                chinese = (row.get(hanzi_col) or "").strip()
+                english = (row.get(english_col) or "").strip()
+                if not chinese or not english:
+                    continue
 
-            # Use the first variant before "/"
-            english = english.split("/")[0].strip()
+                # Use the first variant before "/"
+                english = english.split("/")[0].strip()
 
-            # ── Skip multi-word English entries ───────────────────────────────
-            if len(english.split()) > 1:
-                continue
+                # ── Skip multi-word English entries ───────────────────────────
+                if len(english.split()) > 1:
+                    continue
 
-            slug = to_slug(english)
-            if not slug or slug in seen_slugs:
-                continue
-            seen_slugs.add(slug)
+                slug = to_slug(english)
+                if not slug or slug in seen_slugs:
+                    continue
+                seen_slugs.add(slug)
 
-            if slug in done:
-                continue
+                if slug in done:
+                    continue
 
-            syllables_tones = get_syllables_with_tones(chinese)
-            if not syllables_tones:
-                continue
+                syllables_tones = get_syllables_with_tones(chinese)
+                if not syllables_tones:
+                    continue
 
-            prompt = build_prompt(english, syllables_tones, mnemonics)
-            if not prompt:
-                continue
+                prompt = build_prompt(english, syllables_tones, mnemonics)
+                if not prompt:
+                    continue
 
-            entries.append({
-                "english":         english,
-                "chinese":         chinese,
-                "slug":            slug,
-                "syllables_tones": syllables_tones,
-                "prompt":          prompt,
-            })
+                entries.append({
+                    "english":         english,
+                    "chinese":         chinese,
+                    "slug":            slug,
+                    "syllables_tones": syllables_tones,
+                    "prompt":          prompt,
+                })
 
     # ── Print header ──────────────────────────────────────────────────────────
     bar  = "─" * 64
     cost = len(entries) * COST_PER_IMAGE
     mins = len(entries) * DELAY_SECONDS / 60
     print(bar)
-    print("  English mnemonic image generator  (HSK 1, single-word only)")
+    print("  English mnemonic image generator  (HSK 1 + 2, single-word only)")
     print(bar)
     print(f"  Eligible entries : {len(seen_slugs)}")
     print(f"  Already done     : {len(done)}")
