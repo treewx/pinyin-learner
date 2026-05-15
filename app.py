@@ -902,6 +902,277 @@ with tab_para:
 # TAB 3 — WORD LOOKUP
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ── Pre-built Chinglish passage library ───────────────────────────────────────
+# Each passage is written in Chinese grammar word order (no articles,
+# time-words first, serial verbs) using only HSK 1 & 2 vocabulary.
+# Grey tiles will appear for any words not yet in the image library.
+
+_PASSAGE_NONE = "— pick a story —"
+PASSAGE_LIBRARY = [
+    {
+        "title": "My Morning Routine",
+        "level": "HSK 1",
+        "text": (
+            "Today morning I eat breakfast.\n"
+            "I drink water and tea.\n"
+            "After I go school.\n"
+            "Teacher teach Chinese.\n"
+            "I like study Chinese.\n"
+            "Afternoon I very tired.\n"
+            "I want rest."
+        ),
+    },
+    {
+        "title": "Shopping Day",
+        "level": "HSK 1",
+        "text": (
+            "Tomorrow I want go shop.\n"
+            "Shop sell clothes and book.\n"
+            "I buy red clothes.\n"
+            "Clothes very beautiful.\n"
+            "I also buy book.\n"
+            "Book very interesting.\n"
+            "I happy go home."
+        ),
+    },
+    {
+        "title": "At the Hospital",
+        "level": "HSK 1",
+        "text": (
+            "Yesterday I not comfortable.\n"
+            "I go hospital see doctor.\n"
+            "Doctor say I need rest.\n"
+            "Doctor say drink more water.\n"
+            "I buy medicine.\n"
+            "Now I better.\n"
+            "Tomorrow I go school."
+        ),
+    },
+    {
+        "title": "Cold Weather",
+        "level": "HSK 1–2",
+        "text": (
+            "Today weather very cold.\n"
+            "Outside have snow.\n"
+            "I wear overcoat go outside.\n"
+            "Afternoon rain stop.\n"
+            "Weather become warm.\n"
+            "Evening I at home watch television.\n"
+            "Today I not go outside."
+        ),
+    },
+    {
+        "title": "My Family",
+        "level": "HSK 1",
+        "text": (
+            "I family have dad mom and I.\n"
+            "Dad go office work.\n"
+            "Mom go shop buy food.\n"
+            "Evening we together eat dinner.\n"
+            "I help mom wash bowl.\n"
+            "After we watch television.\n"
+            "We family very happy."
+        ),
+    },
+    {
+        "title": "Learning Chinese",
+        "level": "HSK 1–2",
+        "text": (
+            "I study Chinese every day.\n"
+            "Chinese very interesting.\n"
+            "Morning I read book.\n"
+            "I listen teacher speak Chinese.\n"
+            "I write Chinese character.\n"
+            "Sometimes I speak Chinese with friend.\n"
+            "My Chinese slowly become good."
+        ),
+    },
+    {
+        "title": "Weekend Fun",
+        "level": "HSK 1–2",
+        "text": (
+            "Saturday I not go school.\n"
+            "Morning I run park.\n"
+            "Park very beautiful.\n"
+            "Afternoon friend come my home.\n"
+            "We together watch movie.\n"
+            "Evening we go restaurant eat dinner.\n"
+            "Weekend very happy."
+        ),
+    },
+    {
+        "title": "At the Restaurant",
+        "level": "HSK 1–2",
+        "text": (
+            "Today evening I go restaurant eat dinner.\n"
+            "Restaurant sell noodles and dumplings.\n"
+            "I want eat noodles.\n"
+            "Friend want eat dumplings.\n"
+            "Food very delicious.\n"
+            "We drink tea.\n"
+            "Bill not expensive.\n"
+            "We very happy."
+        ),
+    },
+    {
+        "title": "Travel to Beijing",
+        "level": "HSK 1–2",
+        "text": (
+            "Next month I go Beijing travel.\n"
+            "I take airplane go.\n"
+            "Airplane very fast.\n"
+            "Beijing very big and beautiful.\n"
+            "I want see many place.\n"
+            "I also want buy souvenir.\n"
+            "Travel very interesting."
+        ),
+    },
+    {
+        "title": "My Good Friend",
+        "level": "HSK 1–2",
+        "text": (
+            "I have good friend.\n"
+            "He very smart and happy.\n"
+            "We together study Chinese.\n"
+            "Sometimes we go cinema see movie.\n"
+            "Sometimes we go park run.\n"
+            "Friend very important.\n"
+            "I very happy have this friend."
+        ),
+    },
+    {
+        "title": "Dad Goes to Work",
+        "level": "HSK 1–2",
+        "text": (
+            "Every day morning dad wake up early.\n"
+            "He eat breakfast drink coffee.\n"
+            "After he drive car go office.\n"
+            "Office very busy.\n"
+            "Afternoon he have meeting.\n"
+            "Evening dad come home very tired.\n"
+            "Mom cook dinner wait him."
+        ),
+    },
+    {
+        "title": "The Four Seasons",
+        "level": "HSK 1–2",
+        "text": (
+            "Spring weather warm.\n"
+            "Outside flower bloom.\n"
+            "Summer weather very hot.\n"
+            "I want drink cold water.\n"
+            "Autumn weather very good.\n"
+            "I like go outside walk.\n"
+            "Winter weather cold.\n"
+            "I wear overcoat."
+        ),
+    },
+    {
+        "title": "A Rainy Day",
+        "level": "HSK 1–2",
+        "text": (
+            "Today morning weather cloudy.\n"
+            "Afternoon start rain.\n"
+            "I not bring umbrella.\n"
+            "I go convenience store buy umbrella.\n"
+            "Rain very big.\n"
+            "I wait inside shop.\n"
+            "Later rain stop.\n"
+            "I go home."
+        ),
+    },
+    {
+        "title": "At the Supermarket",
+        "level": "HSK 2",
+        "text": (
+            "Today mom want go supermarket.\n"
+            "I together go.\n"
+            "Supermarket sell many thing.\n"
+            "Mom buy vegetable and meat.\n"
+            "I want buy bread and milk.\n"
+            "Supermarket very convenient.\n"
+            "We buy finish go home.\n"
+            "Mom cook very delicious food."
+        ),
+    },
+]
+
+
+def build_english_passage_image(
+    token_stream: list[dict],
+    eng_lookup: dict,
+    thumb_px: int = 180,
+    cols_per_row: int = 5,
+) -> Image.Image | None:
+    """
+    Stitch English mnemonic tiles into a single downloadable PIL image.
+    Available words use their mnemonic JPEG; missing words get a grey box.
+    """
+    word_tokens = [t for t in token_stream if t["type"] == "word"]
+    if not word_tokens:
+        return None
+
+    # Re-layout into rows (same logic as the live display)
+    rows: list[list[dict]] = []
+    current: list[dict] = []
+    for tok in token_stream:
+        if tok["type"] == "newline":
+            if current:
+                rows.append(current)
+                current = []
+        else:
+            if len(current) >= cols_per_row:
+                rows.append(current)
+                current = []
+            current.append(tok)
+    if current:
+        rows.append(current)
+
+    GAP_X    = 10
+    GAP_Y    = 14
+    LABEL_H  = max(18, thumb_px // 10)
+    PAD      = 20
+    font     = get_font(max(13, thumb_px // 12))
+    chin_font = get_font(max(18, thumb_px // 9))
+
+    row_h    = thumb_px + LABEL_H + 4
+    canvas_w = cols_per_row * thumb_px + (cols_per_row - 1) * GAP_X + PAD * 2
+    canvas_h = len(rows) * row_h + (len(rows) - 1) * GAP_Y + PAD * 2
+
+    canvas = Image.new("RGB", (canvas_w, canvas_h), (255, 255, 255))
+    draw   = ImageDraw.Draw(canvas)
+
+    y = PAD
+    for row in rows:
+        x = PAD
+        for tok in row:
+            img_p = ENGLISH_IMAGE_DIR / f"{tok['slug']}.jpg"
+            if tok["found"] and img_p.exists():
+                tile = Image.open(img_p).resize((thumb_px, thumb_px), Image.LANCZOS)
+            else:
+                tile = Image.new("RGB", (thumb_px, thumb_px), (220, 220, 220))
+                td   = ImageDraw.Draw(tile)
+                tw   = td.textlength(tok["text"], font=font)
+                td.text(
+                    ((thumb_px - tw) / 2, thumb_px / 2 - LABEL_H),
+                    tok["text"], fill=(120, 120, 120), font=font,
+                )
+
+            canvas.paste(tile, (x, y))
+
+            # Word label centred below tile
+            label = tok["text"]
+            lw = draw.textlength(label, font=font)
+            draw.text(
+                (x + (thumb_px - lw) / 2, y + thumb_px + 3),
+                label, fill=(140, 140, 140), font=font,
+            )
+            x += thumb_px + GAP_X
+        y += row_h + GAP_Y
+
+    return canvas
+
+
 # Chinglish sentences: English words in Chinese word order.
 # Each 'words' list uses the exact English display names from HSK 1.
 _SENTENCE_NONE = "— choose a sample sentence —"
@@ -1067,18 +1338,35 @@ with tab_words:
     # ═════════════════════════════════════════════════════════════════════════
     else:
         st.write(
-            "Type an English sentence or paragraph below. "
-            "Each word will be shown as its mnemonic image — "
-            "grey tiles are words not yet in the image library."
+            "Pick a ready-made Chinglish story **or** type your own passage below. "
+            "Each word is shown as its mnemonic image — grey dashed tiles are "
+            "words not yet in the library."
         )
 
+        # ── Story library picker ──────────────────────────────────────────────
+        story_options = [_PASSAGE_NONE] + [
+            f"{p['title']}  ({p['level']})" for p in PASSAGE_LIBRARY
+        ]
+        chosen_story = st.selectbox(
+            "📚  Load a story",
+            options=story_options,
+            key="wl_story_picker",
+        )
+        if chosen_story != _PASSAGE_NONE:
+            idx = story_options.index(chosen_story) - 1
+            st.session_state["wl_passage_rendered"] = PASSAGE_LIBRARY[idx]["text"]
+
+        # ── Free-text area ────────────────────────────────────────────────────
         passage_text = st.text_area(
-            "English passage",
-            height=130,
+            "Or type / paste your own passage (write in Chinese word order for best effect):",
+            value=st.session_state.get("wl_passage_rendered", ""),
+            height=160,
             placeholder=(
-                "e.g.  Today I want to drink water and eat breakfast at home. "
-                "Tomorrow I will go to school and study."
+                "e.g.  Today morning I eat breakfast.\n"
+                "After I go school study Chinese.\n"
+                "Afternoon I go shop buy book."
             ),
+            key="wl_passage_input",
         )
 
         col_read, col_clear = st.columns([3, 1])
@@ -1087,11 +1375,15 @@ with tab_words:
 
         if clear_clicked:
             st.session_state.pop("wl_passage_rendered", None)
+            st.rerun()
 
         if read_clicked and passage_text.strip():
             st.session_state["wl_passage_rendered"] = passage_text.strip()
 
         rendered_text = st.session_state.get("wl_passage_rendered", "")
+        # Sync: if the user manually edited the text area, use that
+        if passage_text.strip() and passage_text.strip() != rendered_text:
+            rendered_text = passage_text.strip() if read_clicked else rendered_text
 
         if rendered_text:
             # ── Tokenise: split into words, keep newlines as row breaks ───────
@@ -1208,3 +1500,23 @@ with tab_words:
                         )
 
                 st.write("")
+
+            # ── Download button ───────────────────────────────────────────────
+            st.divider()
+            with st.spinner("Building download image…"):
+                dl_img = build_english_passage_image(
+                    token_stream,
+                    eng_lookup,
+                    thumb_px=PARA_TILE_PX[img_size],
+                    cols_per_row=COLS_FOR_SIZE[img_size],
+                )
+            if dl_img:
+                buf = io.BytesIO()
+                dl_img.save(buf, format="PNG")
+                st.download_button(
+                    label="⬇️  Download passage as PNG",
+                    data=buf.getvalue(),
+                    file_name="passage.png",
+                    mime="image/png",
+                    use_container_width=True,
+                )
