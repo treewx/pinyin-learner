@@ -681,7 +681,7 @@ with st.sidebar:
 
     # Diagnostic: show where the app is looking for images
     st.divider()
-    img_count = len(list(IMAGE_DIR.glob("*.png"))) if IMAGE_DIR.exists() else 0
+    img_count = sum(1 for ext in ("*.jpg", "*.png") for _ in IMAGE_DIR.glob(ext)) if IMAGE_DIR.exists() else 0
     if img_count:
         st.caption(f"📁 {img_count} images found")
     else:
@@ -902,6 +902,84 @@ with tab_para:
 # TAB 3 — WORD LOOKUP
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# Chinglish sentences: English words in Chinese word order.
+# Each 'words' list uses the exact English display names from HSK 1.
+_SENTENCE_NONE = "— choose a sample sentence —"
+CURATED_SENTENCES = [
+    {"label": "I morning eat breakfast",             "words": ["morning", "eat", "breakfast"]},
+    {"label": "She afternoon drink tea rest",        "words": ["afternoon", "drink", "tea", "rest"]},
+    {"label": "I evening go to bed",                 "words": ["evening", "go to bed"]},
+    {"label": "He today very busy",                  "words": ["today", "busy"]},
+    {"label": "I want drink water",                  "words": ["want", "drink", "water"]},
+    {"label": "She buy clothes",                     "words": ["buy", "clothes"]},
+    {"label": "I go bookstore buy book",             "words": ["bookstore", "buy", "book"]},
+    {"label": "I like eat bread",                    "words": ["like", "eat", "bread"]},
+    {"label": "He tomorrow go Beijing",              "words": ["tomorrow", "go", "Beijing"]},
+    {"label": "Teacher ask student",                 "words": ["teacher", "ask", "student"]},
+    {"label": "I dad together drink tea",            "words": ["dad", "together", "drink", "tea"]},
+    {"label": "Son daughter play ball",              "words": ["son", "daughter", "ball"]},
+    {"label": "I birthday eat dinner",               "words": ["birthday", "eat", "dinner"]},
+    {"label": "He drive car go airport",             "words": ["drive", "car", "airport"]},
+    {"label": "Weather today very cold",             "words": ["weather", "today", "cold"]},
+    {"label": "I go cinema see movie",               "words": ["cinema", "movie"]},
+    {"label": "I classmate go school together",      "words": ["classmate", "school", "together"]},
+    {"label": "Doctor come hospital",                "words": ["doctor", "come", "hospital"]},
+    {"label": "I at home watch television",          "words": ["at home", "television"]},
+    {"label": "I use cell phone call friend",        "words": ["cell phone", "call", "friend"]},
+]
+
+
+# Word categories for random sentence generation.
+# Values must match the exact 'display' names produced by load_english_lookup().
+_GEN_CATEGORIES: dict[str, list[str]] = {
+    "time":   ["today", "tomorrow", "yesterday", "morning", "afternoon", "evening"],
+    "person": ["dad", "friend", "teacher", "doctor", "classmate",
+               "son", "daughter", "boyfriend", "girlfriend"],
+    "verb":   ["eat", "drink", "buy", "drive", "want", "like", "rest", "study", "call"],
+    "food":   ["breakfast", "lunch", "dinner", "bread", "tea", "water", "bun", "noodles"],
+    "item":   ["book", "clothes", "bag", "ball", "car", "computer", "cell phone", "backpack"],
+    "place":  ["school", "hospital", "bookstore", "cinema", "airport",
+               "Beijing", "restaurant", "library"],
+    "adj":    ["busy", "happy", "cold", "tired", "early", "clean"],
+}
+
+# Each template is a list of category names in Chinese grammar word order.
+_GEN_TEMPLATES: list[list[str]] = [
+    ["time", "verb", "food"],
+    ["person", "time", "adj"],
+    ["person", "verb", "item"],
+    ["time", "verb", "place"],
+    ["time", "person", "verb", "place"],
+    ["person", "verb", "food", "place"],
+    ["time", "person", "verb", "food"],
+    ["person", "verb", "item", "place"],
+]
+
+
+def _load_wl_sentence() -> None:
+    label = st.session_state.get("wl_sentence_picker", "")
+    if not label or label == _SENTENCE_NONE:
+        return
+    chosen = next((s for s in CURATED_SENTENCES if s["label"] == label), None)
+    if not chosen:
+        return
+    eng_lkp = load_english_lookup()
+    avail = {v["display"] for k, v in eng_lkp.items()
+             if (ENGLISH_IMAGE_DIR / f"{k}.jpg").exists()}
+    st.session_state.wl_selected = [w for w in chosen["words"] if w in avail]
+
+
+def _generate_wl_sentence(available: dict[str, str]) -> list[str]:
+    """Pick a random template and fill each slot from available image words."""
+    template = random.choice(_GEN_TEMPLATES)
+    result = []
+    for cat in template:
+        candidates = [w for w in _GEN_CATEGORIES[cat] if w in available]
+        if candidates:
+            result.append(random.choice(candidates))
+    return result
+
+
 with tab_words:
     st.subheader("Word Lookup")
     st.write(
@@ -918,10 +996,26 @@ with tab_words:
         if (ENGLISH_IMAGE_DIR / f"{k}.jpg").exists()
     }
 
+    col_sentence, col_generate = st.columns([4, 1])
+    with col_sentence:
+        st.selectbox(
+            "Or load a sample sentence:",
+            options=[_SENTENCE_NONE] + [s["label"] for s in CURATED_SENTENCES],
+            key="wl_sentence_picker",
+            on_change=_load_wl_sentence,
+        )
+    with col_generate:
+        st.write("")   # nudge button down to align with selectbox
+        if st.button("🎲 Generate", use_container_width=True):
+            words = _generate_wl_sentence(available)
+            if words:
+                st.session_state.wl_selected = words
+
     selected_displays = st.multiselect(
         "Words / phrases",
         options=sorted(available.keys(), key=str.lower),
         placeholder="Type to search — e.g.  sleep,  phone,  play ball…",
+        key="wl_selected",
     )
 
     if selected_displays:
