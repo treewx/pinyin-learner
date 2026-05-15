@@ -42,10 +42,11 @@ except ImportError:
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
-SCRIPT_DIR = Path(__file__).parent
-IMAGE_DIR  = SCRIPT_DIR / "output_images"
-HSK1_CSV   = SCRIPT_DIR / "hsk1.csv"
-HSK2_CSV   = SCRIPT_DIR / "hsk2.csv"
+SCRIPT_DIR        = Path(__file__).parent
+IMAGE_DIR         = SCRIPT_DIR / "output_images"
+ENGLISH_IMAGE_DIR = SCRIPT_DIR / "english_images"
+HSK1_CSV          = SCRIPT_DIR / "hsk1.csv"
+HSK2_CSV          = SCRIPT_DIR / "hsk2.csv"
 
 # ── Layout constants (Visual Paragraph) ──────────────────────────────────────
 
@@ -262,6 +263,66 @@ def load_vocab() -> pd.DataFrame:
     if not dfs:
         return pd.DataFrame(columns=["chinese", "pinyin", "english", "level"])
     return pd.concat(dfs, ignore_index=True)
+
+
+@st.cache_data
+def load_english_lookup() -> dict[str, dict]:
+    """
+    Build {slug: {chinese, pinyin, display}} from HSK 1 plus any entries
+    in english_words_todo.csv that have a 'your_word' filled in.
+
+    'display' is the human-readable English word or phrase used as the
+    multiselect label and as the basis for the image filename.
+    """
+    lookup: dict[str, dict] = {}
+
+    def _add(chinese: str, pinyin_raw: str, display: str) -> None:
+        slug = to_slug(display)
+        if not slug or slug in lookup:
+            return
+        if PYPINYIN_OK:
+            chars = "".join(c for c in chinese if "一" <= c <= "鿿")
+            py = to_pinyin(chars, style=Style.TONE, heteronym=False)
+            pinyin_clean = " ".join(p[0] for p in py if p and p[0])
+        else:
+            pinyin_clean = pinyin_raw.split("/")[0].strip()
+        lookup[slug] = {
+            "chinese": chinese.split("/")[0].strip(),
+            "pinyin":  pinyin_clean,
+            "display": display,
+        }
+
+    # ── HSK 1 CSV (all entries) ───────────────────────────────────────────────
+    if HSK1_CSV.exists():
+        df = pd.read_csv(HSK1_CSV)
+        df.columns = [c.strip().lower() for c in df.columns]
+        hanzi_col = "hanzi" if "hanzi" in df.columns else "chinese"
+        for _, row in df.iterrows():
+            chinese = str(row.get(hanzi_col, "")).strip()
+            pinyin  = str(row.get("pinyin",  "")).strip()
+            english = str(row.get("english", "")).strip()
+            if not chinese or not english or english == "nan":
+                continue
+            display = english.split("/")[0].strip()
+            if display:
+                _add(chinese, pinyin, display)
+
+    # ── User-curated todo CSV (your_word column, any word or phrase) ──────────
+    todo_csv = SCRIPT_DIR / "english_words_todo.csv"
+    if todo_csv.exists():
+        import csv as _csv
+        with open(todo_csv, newline="", encoding="utf-8-sig") as f:
+            for row in _csv.DictReader(f):
+                chinese          = (row.get("chinese")          or "").strip()
+                pinyin           = (row.get("pinyin")           or "").strip()
+                your_word        = (row.get("your_word")        or "").strip()
+                original_english = (row.get("original_english") or "").strip()
+                # Fall back to original English if no override supplied
+                display = your_word or original_english.split("/")[0].strip()
+                if chinese and display:
+                    _add(chinese, pinyin, display)
+
+    return lookup
 
 
 # ── Visual Paragraph builder ──────────────────────────────────────────────────
@@ -571,7 +632,7 @@ if not PYPINYIN_OK:
 
 vocab = load_vocab()
 
-tab_study, tab_para = st.tabs(["📚 Study", "🖼️ Visual Paragraph"])
+tab_study, tab_para, tab_words = st.tabs(["📚 Study", "🖼️ Visual Paragraph", "🔤 Word Lookup"])
 
 
 # ── Sidebar (visible in both tabs) ───────────────────────────────────────────
@@ -835,3 +896,61 @@ with tab_para:
                         mime="image/png",
                         use_container_width=True,
                     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TAB 3 — WORD LOOKUP
+# ═══════════════════════════════════════════════════════════════════════════════
+
+with tab_words:
+    st.subheader("Word Lookup")
+    st.write(
+        "Search for English words or phrases — type to filter, then select. "
+        "Each entry shows the Chinese mnemonic art for that word or phrase."
+    )
+
+    eng_lookup = load_english_lookup()
+
+    # Only surface entries that already have a generated image
+    available: dict[str, str] = {          # display → slug
+        v["display"]: k
+        for k, v in eng_lookup.items()
+        if (ENGLISH_IMAGE_DIR / f"{k}.jpg").exists()
+    }
+
+    selected_displays = st.multiselect(
+        "Words / phrases",
+        options=sorted(available.keys(), key=str.lower),
+        placeholder="Type to search — e.g.  sleep,  phone,  play ball…",
+    )
+
+    if selected_displays:
+        cols_per_row = COLS_FOR_SIZE[img_size]
+        slugs = [available[d] for d in selected_displays]
+
+        for row_start in range(0, len(slugs), cols_per_row):
+            row_slugs = slugs[row_start : row_start + cols_per_row]
+            padded    = row_slugs + [None] * (cols_per_row - len(row_slugs))
+            cols      = st.columns(cols_per_row)
+
+            for col, slug in zip(cols, padded):
+                if slug is None:
+                    continue
+                entry = eng_lookup[slug]
+                img_p = ENGLISH_IMAGE_DIR / f"{slug}.jpg"
+
+                with col:
+                    st.image(Image.open(img_p), use_container_width=True)
+                    st.markdown(
+                        f"<div style='text-align:center;font-size:2em;"
+                        f"font-weight:bold;margin-top:4px'>"
+                        f"{entry['chinese']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        f"<div style='text-align:center;color:#666;"
+                        f"margin-bottom:8px'>{entry['pinyin']}</div>",
+                        unsafe_allow_html=True,
+                    )
+
+            st.write("")

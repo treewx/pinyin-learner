@@ -1,0 +1,14 @@
+# Runtime progress & error logs (generated locally, not needed on Streamlit Cloud)
+progress.json
+english_progress.json
+errors.json
+english_errors.json
+english_phrase_errors.json
+
+# Claude internal
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+.env
