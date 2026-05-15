@@ -1106,44 +1106,70 @@ def build_english_passage_image(
 ) -> Image.Image | None:
     """
     Stitch English mnemonic tiles into a single downloadable PIL image.
-    Available words use their mnemonic JPEG; missing words get a grey box.
+    Handles word tiles, grey placeholders, and ### story-title headers.
     """
     word_tokens = [t for t in token_stream if t["type"] == "word"]
     if not word_tokens:
         return None
 
-    # Re-layout into rows (same logic as the live display)
-    rows: list[list[dict]] = []
+    GAP_X      = 10
+    GAP_Y      = 14
+    HEADER_H   = 36        # height of a story-title band
+    LABEL_H    = max(18, thumb_px // 10)
+    PAD        = 20
+    font       = get_font(max(13, thumb_px // 12))
+    hdr_font   = get_font(max(16, thumb_px // 9))
+
+    tile_row_h = thumb_px + LABEL_H + 4
+
+    # ── Re-layout (mirrors live display) ─────────────────────────────────────
+    # rows: list of (list[dict] of tiles)  OR  {"type": "header", "text": str}
+    rows: list = []
     current: list[dict] = []
+
+    def _flush_dl():
+        if current:
+            rows.append(list(current))
+            current.clear()
+
     for tok in token_stream:
-        if tok["type"] == "newline":
-            if current:
-                rows.append(current)
-                current = []
+        if tok["type"] == "header":
+            _flush_dl()
+            rows.append(tok)
+        elif tok["type"] == "newline":
+            _flush_dl()
         else:
             if len(current) >= cols_per_row:
-                rows.append(current)
-                current = []
+                _flush_dl()
             current.append(tok)
-    if current:
-        rows.append(current)
+    _flush_dl()
 
-    GAP_X    = 10
-    GAP_Y    = 14
-    LABEL_H  = max(18, thumb_px // 10)
-    PAD      = 20
-    font     = get_font(max(13, thumb_px // 12))
-    chin_font = get_font(max(18, thumb_px // 9))
-
-    row_h    = thumb_px + LABEL_H + 4
+    # ── Canvas height ─────────────────────────────────────────────────────────
     canvas_w = cols_per_row * thumb_px + (cols_per_row - 1) * GAP_X + PAD * 2
-    canvas_h = len(rows) * row_h + (len(rows) - 1) * GAP_Y + PAD * 2
+    canvas_h = PAD * 2
+    for row in rows:
+        if isinstance(row, dict):          # header
+            canvas_h += HEADER_H + GAP_Y
+        else:
+            canvas_h += tile_row_h + GAP_Y
 
     canvas = Image.new("RGB", (canvas_w, canvas_h), (255, 255, 255))
     draw   = ImageDraw.Draw(canvas)
 
     y = PAD
     for row in rows:
+        # Header band
+        if isinstance(row, dict) and row["type"] == "header":
+            draw.rectangle(
+                [PAD - 6, y, canvas_w - PAD + 6, y + HEADER_H],
+                fill=(240, 244, 255), outline=(170, 195, 255), width=2,
+            )
+            draw.text((PAD + 4, y + 8), f"📖 {row['text']}",
+                      fill=(51, 85, 170), font=hdr_font)
+            y += HEADER_H + GAP_Y
+            continue
+
+        # Tile row
         x = PAD
         for tok in row:
             img_p = ENGLISH_IMAGE_DIR / f"{tok['slug']}.jpg"
@@ -1154,21 +1180,19 @@ def build_english_passage_image(
                 td   = ImageDraw.Draw(tile)
                 tw   = td.textlength(tok["text"], font=font)
                 td.text(
-                    ((thumb_px - tw) / 2, thumb_px / 2 - LABEL_H),
+                    ((thumb_px - tw) / 2, thumb_px / 2 - LABEL_H // 2),
                     tok["text"], fill=(120, 120, 120), font=font,
                 )
-
             canvas.paste(tile, (x, y))
 
-            # Word label centred below tile
             label = tok["text"]
-            lw = draw.textlength(label, font=font)
+            lw    = draw.textlength(label, font=font)
             draw.text(
                 (x + (thumb_px - lw) / 2, y + thumb_px + 3),
                 label, fill=(140, 140, 140), font=font,
             )
             x += thumb_px + GAP_X
-        y += row_h + GAP_Y
+        y += tile_row_h + GAP_Y
 
     return canvas
 
@@ -1338,29 +1362,52 @@ with tab_words:
     # ═════════════════════════════════════════════════════════════════════════
     else:
         st.write(
-            "Pick a ready-made Chinglish story **or** type your own passage below. "
-            "Each word is shown as its mnemonic image — grey dashed tiles are "
-            "words not yet in the library."
+            "Build a reading list by picking stories in order, then hit **Read**. "
+            "Or type / paste your own passage below. "
+            "Grey dashed tiles = words not yet in the image library."
         )
 
-        # ── Story library picker ──────────────────────────────────────────────
-        story_options = [_PASSAGE_NONE] + [
-            f"{p['title']}  ({p['level']})" for p in PASSAGE_LIBRARY
-        ]
-        chosen_story = st.selectbox(
-            "📚  Load a story",
-            options=story_options,
+        # ── Reading-list builder (multiselect) ────────────────────────────────
+        story_labels = [f"{p['title']}  ({p['level']})" for p in PASSAGE_LIBRARY]
+
+        chosen_stories = st.multiselect(
+            "📚  Reading list — pick stories in the order you want to read them:",
+            options=story_labels,
+            placeholder="Add one or more stories…",
             key="wl_story_picker",
         )
-        if chosen_story != _PASSAGE_NONE:
-            idx = story_options.index(chosen_story) - 1
-            st.session_state["wl_passage_rendered"] = PASSAGE_LIBRARY[idx]["text"]
+
+        col_load, col_clear_list = st.columns([3, 1])
+        load_clicked       = col_load.button(
+            f"📋  Load {len(chosen_stories)} stor{'y' if len(chosen_stories) == 1 else 'ies'}",
+            disabled=not chosen_stories,
+            use_container_width=True,
+        )
+        clear_list_clicked = col_clear_list.button(
+            "✕  Clear list", use_container_width=True,
+        )
+
+        if load_clicked and chosen_stories:
+            parts = []
+            for label in chosen_stories:
+                idx  = story_labels.index(label)
+                p    = PASSAGE_LIBRARY[idx]
+                # Each story starts with a ### header line the tokeniser will detect
+                parts.append(f"### {p['title']}\n{p['text']}")
+            combined = "\n\n".join(parts)
+            st.session_state["wl_passage_input"]    = combined
+            st.session_state["wl_passage_rendered"] = combined
+            st.rerun()
+
+        if clear_list_clicked:
+            st.session_state.pop("wl_passage_input",    None)
+            st.session_state.pop("wl_passage_rendered", None)
+            st.rerun()
 
         # ── Free-text area ────────────────────────────────────────────────────
         passage_text = st.text_area(
-            "Or type / paste your own passage (write in Chinese word order for best effect):",
-            value=st.session_state.get("wl_passage_rendered", ""),
-            height=160,
+            "Or type / paste your own passage (Chinese word order works best):",
+            height=200,
             placeholder=(
                 "e.g.  Today morning I eat breakfast.\n"
                 "After I go school study Chinese.\n"
@@ -1371,33 +1418,43 @@ with tab_words:
 
         col_read, col_clear = st.columns([3, 1])
         read_clicked  = col_read.button("📖  Render passage", use_container_width=True)
-        clear_clicked = col_clear.button("✕  Clear", use_container_width=True)
+        clear_clicked = col_clear.button("✕  Clear text", use_container_width=True)
 
         if clear_clicked:
             st.session_state.pop("wl_passage_rendered", None)
+            st.session_state.pop("wl_passage_input",    None)
             st.rerun()
 
         if read_clicked and passage_text.strip():
             st.session_state["wl_passage_rendered"] = passage_text.strip()
 
         rendered_text = st.session_state.get("wl_passage_rendered", "")
-        # Sync: if the user manually edited the text area, use that
-        if passage_text.strip() and passage_text.strip() != rendered_text:
-            rendered_text = passage_text.strip() if read_clicked else rendered_text
 
         if rendered_text:
-            # ── Tokenise: split into words, keep newlines as row breaks ───────
-            # Build a token stream: {"type": "word", "text": str}
-            #                    or {"type": "newline"}
-            # We try 2-word combinations first (for phrases like "play ball").
+            # ── Tokenise ──────────────────────────────────────────────────────
+            # Token types:
+            #   {"type": "word",   "text": str, "slug": str, "found": bool}
+            #   {"type": "newline"}
+            #   {"type": "header", "text": str}   ← ### Title lines
             token_stream: list[dict] = []
             for line in rendered_text.splitlines():
-                if token_stream:
+                stripped = line.strip()
+                # Header line?
+                if stripped.startswith("### "):
+                    if token_stream:
+                        token_stream.append({"type": "newline"})
+                    token_stream.append({"type": "header",
+                                         "text": stripped[4:].strip()})
+                    continue
+                # Blank line → row break
+                if not stripped:
                     token_stream.append({"type": "newline"})
-                raw_words = re.findall(r"[a-zA-Z''-]+", line)
+                    continue
+                if token_stream and token_stream[-1]["type"] not in ("newline", "header"):
+                    token_stream.append({"type": "newline"})
+                raw_words = re.findall(r"[a-zA-Z''-]+", stripped)
                 i = 0
                 while i < len(raw_words):
-                    # Try a 2-word phrase first (e.g. "play ball", "at home")
                     matched = False
                     if i + 1 < len(raw_words):
                         phrase = f"{raw_words[i]} {raw_words[i + 1]}"
@@ -1408,43 +1465,70 @@ with tab_words:
                             i += 2
                             matched = True
                     if not matched:
-                        word = raw_words[i]
-                        slug = to_slug(word)
+                        word  = raw_words[i]
+                        slug  = to_slug(word)
                         found = (ENGLISH_IMAGE_DIR / f"{slug}.jpg").exists()
                         token_stream.append({"type": "word", "text": word,
                                              "slug": slug, "found": found})
                         i += 1
 
-            # ── Layout into rows (wrap at cols_per_row words) ─────────────────
+            # ── Layout into rows ──────────────────────────────────────────────
+            # rows is a mixed list: either a list[dict] of word tiles,
+            # or a single {"type": "header", "text": str} sentinel.
             cols_per_row = COLS_FOR_SIZE[img_size]
-            rows: list[list[dict]] = []
+            rows: list = []
             current_row: list[dict] = []
 
+            def _flush():
+                if current_row:
+                    rows.append(list(current_row))
+                    current_row.clear()
+
             for tok in token_stream:
-                if tok["type"] == "newline":
-                    if current_row:
-                        rows.append(current_row)
-                        current_row = []
+                if tok["type"] == "header":
+                    _flush()
+                    rows.append(tok)          # header is its own row item
+                elif tok["type"] == "newline":
+                    _flush()
                 else:
                     if len(current_row) >= cols_per_row:
-                        rows.append(current_row)
-                        current_row = []
+                        _flush()
                     current_row.append(tok)
-            if current_row:
-                rows.append(current_row)
+            _flush()
 
-            # ── Render rows ───────────────────────────────────────────────────
+            # ── Stats caption ─────────────────────────────────────────────────
             found_count = sum(1 for t in token_stream
                               if t["type"] == "word" and t["found"])
             total_count = sum(1 for t in token_stream if t["type"] == "word")
+            n_stories   = sum(1 for t in token_stream if t["type"] == "header")
+            story_info  = f"  ·  {n_stories} stories" if n_stories > 1 else ""
             st.caption(
-                f"{found_count} / {total_count} words have mnemonic images  "
-                f"({'grey' if found_count < total_count else 'all covered ✅'}  "
-                f"{'tiles = not yet generated' if found_count < total_count else ''})"
+                f"{found_count} / {total_count} words have mnemonic images"
+                f"{story_info}"
+                + (f"  ·  {total_count - found_count} grey tiles = not yet generated"
+                   if found_count < total_count else "  ·  all covered ✅")
             )
             st.write("")
 
+            # ── Render ────────────────────────────────────────────────────────
             for row in rows:
+                # Header row — full-width story title
+                if isinstance(row, dict) and row["type"] == "header":
+                    st.markdown(
+                        f"<div style='margin:18px 0 6px 0;"
+                        f"padding:6px 14px;"
+                        f"background:#f0f4ff;"
+                        f"border-left:4px solid #8aabff;"
+                        f"border-radius:4px;"
+                        f"font-weight:700;"
+                        f"font-size:1.05em;"
+                        f"color:#3355aa'>"
+                        f"📖 {row['text']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    continue
+
+                # Tile row
                 padded = row + [None] * (cols_per_row - len(row))
                 cols   = st.columns(cols_per_row)
 
@@ -1455,7 +1539,6 @@ with tab_words:
                         if tok["found"]:
                             img_p = ENGLISH_IMAGE_DIR / f"{tok['slug']}.jpg"
                             st.image(Image.open(img_p), use_container_width=True)
-                            # Chinese + pinyin below
                             entry = eng_lookup.get(tok["slug"], {})
                             if entry.get("chinese"):
                                 st.markdown(
@@ -1473,7 +1556,6 @@ with tab_words:
                                     unsafe_allow_html=True,
                                 )
                         else:
-                            # Grey placeholder — word not in library yet
                             st.markdown(
                                 f"<div style='"
                                 f"background:#ebebeb;"
@@ -1491,8 +1573,6 @@ with tab_words:
                                 f"{tok['text']}</div>",
                                 unsafe_allow_html=True,
                             )
-
-                        # Word label under every cell
                         st.markdown(
                             f"<div style='text-align:center;font-size:0.75em;"
                             f"color:#bbb;margin-top:2px'>{tok['text']}</div>",
@@ -1513,10 +1593,11 @@ with tab_words:
             if dl_img:
                 buf = io.BytesIO()
                 dl_img.save(buf, format="PNG")
+                n_label = f"{n_stories}-stories" if n_stories > 1 else "passage"
                 st.download_button(
-                    label="⬇️  Download passage as PNG",
+                    label="⬇️  Download reading list as PNG",
                     data=buf.getvalue(),
-                    file_name="passage.png",
+                    file_name=f"reading-list-{n_label}.png",
                     mime="image/png",
                     use_container_width=True,
                 )
