@@ -1197,6 +1197,156 @@ def build_english_passage_image(
     return canvas
 
 
+def build_english_passage_pdf(
+    token_stream: list[dict],
+    eng_lookup: dict,
+    cols_per_row: int = 5,
+    paper: str = "A4",
+) -> bytes | None:
+    """
+    Render the passage as a printable multi-page PDF.
+
+    Tiles are sized to fill the printable width of the page.
+    Rows flow naturally across as many pages as needed.
+    Story-title headers are drawn as coloured accent bands.
+    Uses only Pillow — no extra libraries required.
+    """
+    # ── Page geometry (mm → px at 150 DPI) ───────────────────────────────────
+    DPI      = 150
+    mm2px    = DPI / 25.4
+    sizes_mm = {"A4": (210, 297), "Letter": (216, 279)}
+    pw_mm, ph_mm = sizes_mm.get(paper, sizes_mm["A4"])
+    PAGE_W   = round(pw_mm * mm2px)
+    PAGE_H   = round(ph_mm * mm2px)
+    MARGIN   = round(12 * mm2px)         # 12 mm margin all round
+    GAP_X    = round(2.5 * mm2px)        # horizontal gap between tiles
+    GAP_Y    = round(3.5 * mm2px)        # vertical gap between rows
+    HDR_H    = round(9  * mm2px)         # story-title band height
+
+    usable_w = PAGE_W - 2 * MARGIN
+    tile_px  = (usable_w - (cols_per_row - 1) * GAP_X) // cols_per_row
+    LABEL_H  = max(round(4.5 * mm2px), tile_px // 11)
+    row_h    = tile_px + LABEL_H + round(1.5 * mm2px)
+
+    font     = get_font(max(12, tile_px // 13))
+    hdr_font = get_font(max(14, tile_px // 9))
+
+    # ── Re-layout into mixed rows (same structure as the PNG builder) ─────────
+    rows: list = []
+    current: list[dict] = []
+
+    def _flush_pdf():
+        if current:
+            rows.append(list(current))
+            current.clear()
+
+    for tok in token_stream:
+        if tok["type"] == "header":
+            _flush_pdf()
+            rows.append(tok)
+        elif tok["type"] == "newline":
+            _flush_pdf()
+        else:
+            if len(current) >= cols_per_row:
+                _flush_pdf()
+            current.append(tok)
+    _flush_pdf()
+
+    if not rows:
+        return None
+
+    # ── Paginate: assign each row to a page ───────────────────────────────────
+    pages: list[list] = []
+    page_rows: list   = []
+    cur_y = MARGIN
+
+    for row in rows:
+        h = (HDR_H + GAP_Y) if isinstance(row, dict) else (row_h + GAP_Y)
+        # Start a new page if this row won't fit (but never leave a page empty)
+        if page_rows and cur_y + h > PAGE_H - MARGIN:
+            pages.append(page_rows)
+            page_rows = []
+            cur_y = MARGIN
+        page_rows.append(row)
+        cur_y += h
+
+    if page_rows:
+        pages.append(page_rows)
+
+    # ── Render each page as a PIL Image ──────────────────────────────────────
+    page_images: list[Image.Image] = []
+
+    for p_idx, p_rows in enumerate(pages):
+        img  = Image.new("RGB", (PAGE_W, PAGE_H), (255, 255, 255))
+        draw = ImageDraw.Draw(img)
+
+        # Faint page-number footer
+        pg_label = f"{p_idx + 1} / {len(pages)}"
+        pw = draw.textlength(pg_label, font=font)
+        draw.text(
+            ((PAGE_W - pw) / 2, PAGE_H - MARGIN + round(2 * mm2px)),
+            pg_label, fill=(200, 200, 200), font=font,
+        )
+
+        y = MARGIN
+        for row in p_rows:
+            # Story-title header band
+            if isinstance(row, dict) and row["type"] == "header":
+                draw.rectangle(
+                    [MARGIN - 6, y, PAGE_W - MARGIN + 6, y + HDR_H],
+                    fill=(237, 242, 255), outline=(160, 190, 255), width=2,
+                )
+                draw.text(
+                    (MARGIN + 6, y + HDR_H // 5),
+                    f"  {row['text']}", fill=(40, 75, 160), font=hdr_font,
+                )
+                y += HDR_H + GAP_Y
+                continue
+
+            # Tile row
+            x = MARGIN
+            for tok in row:
+                img_p = ENGLISH_IMAGE_DIR / f"{tok['slug']}.jpg"
+                if tok["found"] and img_p.exists():
+                    tile = Image.open(img_p).resize(
+                        (tile_px, tile_px), Image.LANCZOS
+                    )
+                else:
+                    tile = Image.new("RGB", (tile_px, tile_px), (215, 215, 215))
+                    td   = ImageDraw.Draw(tile)
+                    tw   = td.textlength(tok["text"], font=font)
+                    td.text(
+                        ((tile_px - tw) / 2, tile_px / 2 - LABEL_H // 2),
+                        tok["text"], fill=(110, 110, 110), font=font,
+                    )
+                img.paste(tile, (x, y))
+
+                label = tok["text"]
+                lw    = draw.textlength(label, font=font)
+                draw.text(
+                    (x + (tile_px - lw) / 2, y + tile_px + 2),
+                    label, fill=(150, 150, 150), font=font,
+                )
+                x += tile_px + GAP_X
+            y += row_h + GAP_Y
+
+        page_images.append(img)
+
+    if not page_images:
+        return None
+
+    # ── Save as multi-page PDF via Pillow ─────────────────────────────────────
+    buf = io.BytesIO()
+    page_images[0].save(
+        buf,
+        format="PDF",
+        save_all=True,
+        append_images=page_images[1:],
+        resolution=float(DPI),
+    )
+    return buf.getvalue()
+
+
 # Chinglish sentences: English words in Chinese word order.
 # Each 'words' list uses the exact English display names from HSK 1.
 _SENTENCE_NONE = "— choose a sample sentence —"
@@ -1581,23 +1731,65 @@ with tab_words:
 
                 st.write("")
 
-            # ── Download button ───────────────────────────────────────────────
+            # ── Export options ────────────────────────────────────────────────
             st.divider()
-            with st.spinner("Building download image…"):
-                dl_img = build_english_passage_image(
-                    token_stream,
-                    eng_lookup,
-                    thumb_px=PARA_TILE_PX[img_size],
-                    cols_per_row=COLS_FOR_SIZE[img_size],
-                )
-            if dl_img:
-                buf = io.BytesIO()
-                dl_img.save(buf, format="PNG")
-                n_label = f"{n_stories}-stories" if n_stories > 1 else "passage"
-                st.download_button(
-                    label="⬇️  Download reading list as PNG",
-                    data=buf.getvalue(),
-                    file_name=f"reading-list-{n_label}.png",
-                    mime="image/png",
-                    use_container_width=True,
-                )
+            n_label   = f"{n_stories}-stories" if n_stories > 1 else "passage"
+
+            col_paper, col_cols = st.columns([2, 2])
+            paper_size = col_paper.radio(
+                "Paper size", ["A4", "Letter"],
+                horizontal=True,
+                help="A4 = 210×297 mm  ·  Letter = 216×279 mm",
+            )
+            export_cols = col_cols.radio(
+                "Columns per page", [3, 4, 5],
+                index=1,
+                horizontal=True,
+                help="More columns = smaller tiles but more words per page",
+            )
+
+            col_png, col_pdf = st.columns(2)
+
+            with col_png:
+                with st.spinner("Building PNG…"):
+                    dl_img = build_english_passage_image(
+                        token_stream,
+                        eng_lookup,
+                        thumb_px=PARA_TILE_PX[img_size],
+                        cols_per_row=COLS_FOR_SIZE[img_size],
+                    )
+                if dl_img:
+                    png_buf = io.BytesIO()
+                    dl_img.save(png_buf, format="PNG")
+                    st.download_button(
+                        label="⬇️  Download as PNG",
+                        data=png_buf.getvalue(),
+                        file_name=f"{n_label}.png",
+                        mime="image/png",
+                        use_container_width=True,
+                    )
+
+            with col_pdf:
+                with st.spinner("Building PDF…"):
+                    pdf_bytes = build_english_passage_pdf(
+                        token_stream,
+                        eng_lookup,
+                        cols_per_row=export_cols,
+                        paper=paper_size,
+                    )
+                if pdf_bytes:
+                    st.download_button(
+                        label=f"🖨️  Download as PDF ({paper_size})",
+                        data=pdf_bytes,
+                        file_name=f"{n_label}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                    )
+                    n_pages = len([
+                        r for r in rows
+                        if not (isinstance(r, dict) and r["type"] == "header")
+                    ])  # rough guide
+                    st.caption(
+                        f"Multi-page PDF · tiles sized for {paper_size} · "
+                        f"print at 100% scale, no shrink-to-fit"
+                    )
