@@ -1095,6 +1095,579 @@ PASSAGE_LIBRARY = [
             "Mom cook very delicious food."
         ),
     },
+    # ── NEW STORIES ───────────────────────────────────────────────────────────
+    {
+        "title": "My Cat",
+        "level": "HSK 1",
+        "text": (
+            "I have one cat.\n"
+            "Cat very cute.\n"
+            "Morning cat eat fish.\n"
+            "After cat sleep.\n"
+            "Cat like sleep on bed.\n"
+            "Evening I play with cat.\n"
+            "Cat very happy."
+        ),
+    },
+    {
+        "title": "My Classroom",
+        "level": "HSK 1",
+        "text": (
+            "My classroom very big.\n"
+            "Inside have blackboard and chair.\n"
+            "Teacher write on blackboard.\n"
+            "Student read book.\n"
+            "Teacher ask question.\n"
+            "I answer.\n"
+            "I like my classroom."
+        ),
+    },
+    {
+        "title": "Eating Fruit",
+        "level": "HSK 1",
+        "text": (
+            "Today I eat fruit.\n"
+            "I like eat apple.\n"
+            "Apple very sweet.\n"
+            "I also eat orange.\n"
+            "Orange very good.\n"
+            "Eat fruit body good.\n"
+            "I every day eat fruit."
+        ),
+    },
+    {
+        "title": "My Room",
+        "level": "HSK 1",
+        "text": (
+            "My room not big.\n"
+            "Inside have one bed.\n"
+            "Bed beside have table.\n"
+            "Table above have book.\n"
+            "I like read book in room.\n"
+            "Every evening I clean room.\n"
+            "Room clean I happy."
+        ),
+    },
+    {
+        "title": "I Feel Sick",
+        "level": "HSK 1",
+        "text": (
+            "Today I not comfortable.\n"
+            "Head very hurt.\n"
+            "I tell mom.\n"
+            "Mom say go rest.\n"
+            "I drink water.\n"
+            "I sleep two hour.\n"
+            "After rest I better."
+        ),
+    },
+    {
+        "title": "A Happy Birthday",
+        "level": "HSK 1–2",
+        "text": (
+            "Today my birthday.\n"
+            "Mom cook delicious food.\n"
+            "Friend come my home.\n"
+            "We together eat cake.\n"
+            "Friend give me gift.\n"
+            "I very happy.\n"
+            "This birthday very special."
+        ),
+    },
+    {
+        "title": "A Phone Call",
+        "level": "HSK 1–2",
+        "text": (
+            "Yesterday evening friend call me.\n"
+            "We speak on phone long time.\n"
+            "Friend say tomorrow have holiday.\n"
+            "He want go park play.\n"
+            "I also want go.\n"
+            "We agree morning nine o clock meet.\n"
+            "I very happy."
+        ),
+    },
+    {
+        "title": "At the Library",
+        "level": "HSK 1–2",
+        "text": (
+            "I like go library.\n"
+            "Library very quiet.\n"
+            "Inside have many book.\n"
+            "I find one interesting book.\n"
+            "I sit down read.\n"
+            "Read two hour.\n"
+            "After I borrow book go home."
+        ),
+    },
+    {
+        "title": "Playing Football",
+        "level": "HSK 1–2",
+        "text": (
+            "Saturday afternoon I go park.\n"
+            "Friend already there wait me.\n"
+            "We play football together.\n"
+            "Run very happy.\n"
+            "After play we very tired.\n"
+            "We sit down rest.\n"
+            "Next week we again come play."
+        ),
+    },
+    {
+        "title": "Going Swimming",
+        "level": "HSK 1–2",
+        "text": (
+            "Summer weather very hot.\n"
+            "I want go swimming.\n"
+            "I call friend together go.\n"
+            "Swimming pool water very cold.\n"
+            "But swim very comfortable.\n"
+            "We swim one hour.\n"
+            "After swim we drink cold water."
+        ),
+    },
+    {
+        "title": "At the Coffee Shop",
+        "level": "HSK 1–2",
+        "text": (
+            "Afternoon I go coffee shop.\n"
+            "Coffee shop very comfortable.\n"
+            "I order one cup coffee.\n"
+            "Also order one piece cake.\n"
+            "I sit there read book.\n"
+            "Outside rain.\n"
+            "Inside warm very good."
+        ),
+    },
+    {
+        "title": "Morning Exercise",
+        "level": "HSK 1–2",
+        "text": (
+            "Every morning I early wake up.\n"
+            "I go outside run.\n"
+            "Park very beautiful morning.\n"
+            "Air very fresh.\n"
+            "I run thirty minute.\n"
+            "After run I drink water.\n"
+            "Exercise body very good."
+        ),
+    },
+    {
+        "title": "Holiday with Family",
+        "level": "HSK 1–2",
+        "text": (
+            "This week have holiday.\n"
+            "All family together go travel.\n"
+            "We take car go.\n"
+            "Road have some traffic.\n"
+            "After arrive hotel.\n"
+            "Hotel very clean comfortable.\n"
+            "Holiday very happy."
+        ),
+    },
+    {
+        "title": "School Lunch",
+        "level": "HSK 1–2",
+        "text": (
+            "Every day noon I at school eat lunch.\n"
+            "Canteen sell noodles and rice.\n"
+            "Today I eat noodles.\n"
+            "Classmate sit together eat.\n"
+            "We speak and laugh.\n"
+            "Food delicious price not expensive.\n"
+            "I like school lunch."
+        ),
+    },
+    {
+        "title": "Cooking Noodles",
+        "level": "HSK 1–2",
+        "text": (
+            "Afternoon I hungry.\n"
+            "I go kitchen cook noodles.\n"
+            "First boil water.\n"
+            "After put noodles inside.\n"
+            "Add some vegetable and egg.\n"
+            "Noodles cook finish.\n"
+            "I eat very delicious."
+        ),
+    },
+    {
+        "title": "A Video Call with Grandma",
+        "level": "HSK 1–2",
+        "text": (
+            "Yesterday evening I use computer.\n"
+            "I video call grandma.\n"
+            "Grandma very happy see me.\n"
+            "She ask I study how.\n"
+            "I say study very good.\n"
+            "We speak one hour.\n"
+            "I miss grandma very much."
+        ),
+    },
+    {
+        "title": "Preparing for a Trip",
+        "level": "HSK 1–2",
+        "text": (
+            "Tomorrow I go travel.\n"
+            "Today I need prepare.\n"
+            "I put clothes in bag.\n"
+            "Also bring book and phone.\n"
+            "I check ticket and passport.\n"
+            "Everything ready.\n"
+            "I very excited."
+        ),
+    },
+    {
+        "title": "Movie Night at Home",
+        "level": "HSK 1–2",
+        "text": (
+            "Friday evening friend come my home.\n"
+            "We want watch movie together.\n"
+            "We choose one funny movie.\n"
+            "I prepare snack and drinks.\n"
+            "Movie very interesting.\n"
+            "We laugh many times.\n"
+            "Evening very happy."
+        ),
+    },
+    {
+        "title": "Lost on the Way",
+        "level": "HSK 1–2",
+        "text": (
+            "Yesterday I go new place.\n"
+            "I not know road.\n"
+            "I look at phone map.\n"
+            "Map say turn left.\n"
+            "I walk ten minute.\n"
+            "Finally find place.\n"
+            "Next time I will remember road."
+        ),
+    },
+    {
+        "title": "Taking the Bus",
+        "level": "HSK 1–2",
+        "text": (
+            "Every morning I take bus go school.\n"
+            "Bus station not far from home.\n"
+            "Morning bus many people.\n"
+            "I stand inside wait.\n"
+            "Bus arrive school need thirty minute.\n"
+            "I listen music on bus.\n"
+            "Arrive school I feel good."
+        ),
+    },
+    {
+        "title": "Visiting a Friend's Home",
+        "level": "HSK 1–2",
+        "text": (
+            "Saturday I go friend home visit.\n"
+            "Friend home very big beautiful.\n"
+            "His mom cook many dishes.\n"
+            "Food very delicious.\n"
+            "After eat we play games.\n"
+            "Evening I go home.\n"
+            "I thank friend family."
+        ),
+    },
+    {
+        "title": "A Busy Week",
+        "level": "HSK 1–2",
+        "text": (
+            "This week I very busy.\n"
+            "Monday have exam.\n"
+            "Tuesday I study library.\n"
+            "Wednesday have Chinese class.\n"
+            "Thursday I help teacher.\n"
+            "Friday finally finish.\n"
+            "Weekend I want good rest."
+        ),
+    },
+    {
+        "title": "Learning to Cook",
+        "level": "HSK 1–2",
+        "text": (
+            "Today mom teach me cook.\n"
+            "First we go buy vegetable.\n"
+            "Come home mom show me how cut.\n"
+            "I learn put oil in pan.\n"
+            "Mom say fire not too big.\n"
+            "I follow mom teach.\n"
+            "Food finish I very proud."
+        ),
+    },
+    {
+        "title": "At the Park",
+        "level": "HSK 1",
+        "text": (
+            "Sunday I go park.\n"
+            "Park have many flower.\n"
+            "Flower very beautiful.\n"
+            "I take photo.\n"
+            "Park also have lake.\n"
+            "I sit beside lake rest.\n"
+            "I very comfortable."
+        ),
+    },
+    {
+        "title": "My Hobby",
+        "level": "HSK 1–2",
+        "text": (
+            "My hobby take photo.\n"
+            "I like go beautiful place.\n"
+            "I take photo flower and tree.\n"
+            "Also take photo friend.\n"
+            "After I show friend.\n"
+            "Friend say my photo beautiful.\n"
+            "I very happy."
+        ),
+    },
+    {
+        "title": "A Lazy Sunday",
+        "level": "HSK 1–2",
+        "text": (
+            "Sunday morning I sleep late.\n"
+            "Wake up already ten o clock.\n"
+            "I eat breakfast slowly.\n"
+            "After I read book.\n"
+            "Afternoon I watch television.\n"
+            "Evening I go outside walk.\n"
+            "Sunday very comfortable."
+        ),
+    },
+    {
+        "title": "Chinese New Year",
+        "level": "HSK 2",
+        "text": (
+            "Chinese New Year I go home.\n"
+            "All family together.\n"
+            "We cook many dishes.\n"
+            "Eat dinner together very happy.\n"
+            "After dinner watch television.\n"
+            "Outside have fireworks very beautiful.\n"
+            "New Year wish everyone healthy happy."
+        ),
+    },
+    {
+        "title": "At the Gym",
+        "level": "HSK 2",
+        "text": (
+            "I every week go gym three times.\n"
+            "Gym inside have many equipment.\n"
+            "I first run on machine twenty minute.\n"
+            "After do strength exercise.\n"
+            "Exercise finish I feel very good.\n"
+            "Exercise can improve health.\n"
+            "I suggest everyone exercise."
+        ),
+    },
+    {
+        "title": "Online Shopping",
+        "level": "HSK 2",
+        "text": (
+            "Yesterday I online buy clothes.\n"
+            "I look many styles.\n"
+            "Finally choose one blue jacket.\n"
+            "Price not expensive.\n"
+            "I pay finish wait delivery.\n"
+            "After two day clothes arrive.\n"
+            "I very satisfied."
+        ),
+    },
+    {
+        "title": "Exam Week",
+        "level": "HSK 2",
+        "text": (
+            "This week is exam week.\n"
+            "Every day I study until late.\n"
+            "Morning I go library review.\n"
+            "Afternoon teacher answer question.\n"
+            "Evening I do practice questions.\n"
+            "I nervous but prepared.\n"
+            "I believe I can do well."
+        ),
+    },
+    {
+        "title": "A Business Meeting",
+        "level": "HSK 2",
+        "text": (
+            "Today morning company have meeting.\n"
+            "All colleague sit together discuss.\n"
+            "Manager introduce new plan.\n"
+            "Everyone give opinion.\n"
+            "We discuss two hour.\n"
+            "Finally reach agreement.\n"
+            "After meeting everyone work hard."
+        ),
+    },
+    {
+        "title": "Visiting Grandparents",
+        "level": "HSK 2",
+        "text": (
+            "Weekend I take train go grandparents home.\n"
+            "Train need two hour.\n"
+            "Grandparents wait at station.\n"
+            "See them I very happy.\n"
+            "Grandma cook many delicious food.\n"
+            "We eat together talk together.\n"
+            "Evening I feel warm in heart."
+        ),
+    },
+    {
+        "title": "Moving to a New Home",
+        "level": "HSK 2",
+        "text": (
+            "This month I move new apartment.\n"
+            "New apartment bigger than before.\n"
+            "I clean every room carefully.\n"
+            "Friend come help move things.\n"
+            "We put furniture in place.\n"
+            "Evening we together order food celebrate.\n"
+            "New home I very satisfied."
+        ),
+    },
+    {
+        "title": "A Day Trip",
+        "level": "HSK 1–2",
+        "text": (
+            "Sunday we go nearby mountain.\n"
+            "Morning early set off.\n"
+            "Road two hour by car.\n"
+            "Mountain very beautiful scenery.\n"
+            "We climb and take photo.\n"
+            "Noon eat packed lunch on mountain.\n"
+            "Afternoon return very satisfied."
+        ),
+    },
+    {
+        "title": "Making a New Friend",
+        "level": "HSK 1–2",
+        "text": (
+            "Yesterday in class sit new student.\n"
+            "He name is Xiao Ming.\n"
+            "He come from Shanghai.\n"
+            "I introduce myself to him.\n"
+            "We speak Chinese and English.\n"
+            "After class we go eat together.\n"
+            "I think we will become good friends."
+        ),
+    },
+    {
+        "title": "Helping at Home",
+        "level": "HSK 1",
+        "text": (
+            "Today I help mom clean house.\n"
+            "I sweep floor.\n"
+            "After I wash bowl.\n"
+            "Mom say I very good.\n"
+            "I also help buy vegetables.\n"
+            "Evening we together cook dinner.\n"
+            "Family together very happy."
+        ),
+    },
+    {
+        "title": "Bad Weather Day",
+        "level": "HSK 1–2",
+        "text": (
+            "Today weather very bad.\n"
+            "Outside wind very big.\n"
+            "Also have rain.\n"
+            "I not want go outside.\n"
+            "I stay home read book.\n"
+            "Drink hot tea very comfortable.\n"
+            "Wait weather good I go outside."
+        ),
+    },
+    {
+        "title": "The School Sports Day",
+        "level": "HSK 1–2",
+        "text": (
+            "Today school have sports day.\n"
+            "All student go field.\n"
+            "I join run competition.\n"
+            "I run very fast.\n"
+            "I get second place.\n"
+            "Teacher and classmate clap hands.\n"
+            "I very proud."
+        ),
+    },
+    {
+        "title": "An Unexpected Holiday",
+        "level": "HSK 1–2",
+        "text": (
+            "Today teacher say tomorrow no class.\n"
+            "All student very happy.\n"
+            "I decide tomorrow sleep late.\n"
+            "After wake up go cafe read.\n"
+            "Afternoon meet friend go park.\n"
+            "Evening watch movie at home.\n"
+            "Unexpected holiday very good."
+        ),
+    },
+    {
+        "title": "Drinking Tea with Dad",
+        "level": "HSK 1",
+        "text": (
+            "Evening dad sit in living room.\n"
+            "He drink tea read newspaper.\n"
+            "I go sit beside him.\n"
+            "Dad pour me one cup tea.\n"
+            "We talk about school.\n"
+            "Dad say study hard important.\n"
+            "I like evening time with dad."
+        ),
+    },
+    {
+        "title": "My First Day at School",
+        "level": "HSK 1",
+        "text": (
+            "Today first day at new school.\n"
+            "I feel nervous.\n"
+            "Teacher introduce me to class.\n"
+            "Classmate very friendly.\n"
+            "We together eat lunch.\n"
+            "Afternoon teacher teach Chinese.\n"
+            "First day not as scary as I think."
+        ),
+    },
+    {
+        "title": "A Letter to a Friend",
+        "level": "HSK 2",
+        "text": (
+            "I write letter to friend.\n"
+            "Friend go abroad study.\n"
+            "I tell him I miss him.\n"
+            "I say school life everything good.\n"
+            "I ask how his study.\n"
+            "I hope he healthy happy.\n"
+            "I wait his reply."
+        ),
+    },
+    {
+        "title": "Learning from Mistakes",
+        "level": "HSK 2",
+        "text": (
+            "Yesterday I exam result not good.\n"
+            "I feel sad and disappointed.\n"
+            "Teacher say do not worry.\n"
+            "Need understand where mistake.\n"
+            "I carefully look over mistakes.\n"
+            "I decide study harder.\n"
+            "Mistake help people improve."
+        ),
+    },
+    {
+        "title": "A Surprise for Mom",
+        "level": "HSK 1–2",
+        "text": (
+            "Tomorrow is mom birthday.\n"
+            "I want give her surprise.\n"
+            "I buy flowers and cake.\n"
+            "I also cook her favorite dish.\n"
+            "Morning mom wake up see everything.\n"
+            "She very surprised and happy.\n"
+            "I love mom very much."
+        ),
+    },
 ]
 
 
